@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Supermarket</title>
+    <style>
+        /* Center the buttons on the page */
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 50px;
+        }
+
+        /* Style for buttons */
+        button {
+            width: 100px;         /* Set button width */
+            height: 30px;         /* Set button height */
+            font-size: 14px;      /* Set font size */
+            margin: 10px 0;       /* Space between buttons */
+            cursor: pointer;      /* Change cursor on hover */
+        }
+
+        /* Optional: Add some hover effects */
+        button:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Optional: Different color for each button */
+        #scanToSellBtn {
+            width: 300px;         /* Set button width */
+            height: 80px;         /* Set button height */
+            font-size: 25px;      /* Set font size */
+            margin: 10px 0;       /* Space between buttons */
+            cursor: pointer;      /* Change cursor on hover */
+            background-color: #4CAF50; /* Green background */
+            color: white;
+        }
+
+        /* Style for Scan to Return Button (smaller size) */
+        #scanToReturnBtn {
+            width: 100px;         /* Smaller width */
+            height: 40px;         /* Smaller height */
+            font-size: 14px;      /* Smaller font size */
+            margin-top: 40px;     /* Extra space above */
+            cursor: pointer;
+            background-color: #f44336; /* Red background */
+            color: white;
+        }
+                /* Style for the text */
+        .break-free-text {
+            font-size: 100px;
+            margin: 50px 0;       /* Space around the text */
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Supermarket Products</h1>
+
+    <form action="/add" method="POST">
+        <input type="text" name="name" placeholder="商品名称" required>
+        <input type="text" name="price" placeholder="商品价格" required>
+        <input type="number" name="quantity" placeholder="数量" required>
+        <input type="text" name="barcode" placeholder="条形码数字" required>
+        <button type="submit">添加商品</button>
+    </form>
+<a href="/logs">View Logs</a>
+    <h2>Product List</h2>
+    <table>
+        <tr>
+            <th>商品</th>
+            <th>价格</th>
+            <th>数量</th>
+            <th>条形码</th>
+        </tr>
+        {% for product in products %}
+        <tr>
+            <td>{{ product[1] }}</td>
+            <td>{{ product[2] }}</td>
+            <td>{{ product[3] }}</td>
+            <td>{{ product[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+
+     <button id="scanToSellBtn">销售扫码</button>
+
+    <p class="break-free-text">泾县琴溪洗马桥加油站欢迎您</p>
+
+    <!-- Scan to Return Button -->
+    <button id="scanToReturnBtn">退货扫码</button>
+
+    <!-- Modal for Scan to Sell/Return -->
+    <div id="scanModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Scan to Sell</h2>
+            <p>Enter Barcode:</p>
+            <input type="text" id="barcodeInput" placeholder="Enter barcode">
+        </div>
+    </div>
+
+    <script>
+        var modal = document.getElementById("scanModal");
+        var btnSell = document.getElementById("scanToSellBtn");
+        var btnReturn = document.getElementById("scanToReturnBtn");
+        var span = document.getElementsByClassName("close")[0];
+        var barcodeInput = document.getElementById("barcodeInput");
+        var modalTitle = document.getElementById("modalTitle");
+        var currentMode = "sell";  // Default mode
+
+        // Show modal when "Scan to Sell" is clicked
+        btnSell.onclick = function() {
+            modalTitle.textContent = "Scan to Sell";
+            modal.style.display = "block";
+            barcodeInput.focus();
+            currentMode = "sell";
+        }
+
+        // Show modal when "Scan to Return" is clicked
+        btnReturn.onclick = function() {
+            modalTitle.textContent = "Scan to Return";
+            modal.style.display = "block";
+            barcodeInput.focus();
+            currentMode = "return";
+        }
+
+        // Close modal when "X" is clicked
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // Handle "Enter" key press in the input field
+        barcodeInput.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                let barcode = barcodeInput.value;
+                if (barcode) {
+                    let endpoint = currentMode === "sell" ? '/scan-sell' : '/scan-return';
+                    // Send barcode to Flask backend via AJAX (fetch)
+                    fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            barcode: barcode
+                        })
+                    }).then(response => response.json())
+                      .then(data => {
+                          if (data.success) {
+                              alert(data.message);
+                          } else {
+                              alert("Error: " + data.message);
+                          }
+                      })
+                      .catch(error => console.error('Error:', error));
+
+                    barcodeInput.value = "";  // Clear input for next entry
+                    barcodeInput.focus();     // Refocus on input box
+                }
+            }
+        });
+    </script>
+
+    <style>
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            background-color: rgba(0, 0, 0, 0.5); /* Black with opacity */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>
