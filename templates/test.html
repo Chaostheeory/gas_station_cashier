@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Page</title>
+</head>
+<body>
+
+    <h2>Product Scanner</h2>
+
+    <!-- Input for Barcode -->
+<form action="/scanner_compute" method="POST">
+    <label for="barcode">条形码:</label><br>
+    <input type="number" id="barcode" name="barcode" required autofocus onkeydown="submitOnEnter(event)"><br><br>
+
+</form>
+    <label for="barcodeInput">Enter Barcode:</label>
+    <input type="text" id="barcodeInput" placeholder="Enter product barcode" >
+    <button onclick="returnToIndex()">Return to Index</button>
+    <h2>Current: {{ current_val }}</h2>
+    <h2>Sum: {{ sum_val }}</h2>
+
+    <h3>Current Product</h3>
+    <div id="currentProduct">None</div>
+
+    <h3>Current Sum Price</h3>
+    <div id="currentSumPrice">0.00</div>
+
+    <script>
+        let currentSum = 0;
+
+        // Function to handle barcode input and retrieve product details
+        document.getElementById('barcodeInput').addEventListener('change', function() {
+            const barcode = this.value;
+            if (barcode) {
+                fetch('/get_product', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ barcode: barcode })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const product = data.product;
+
+                        // Display current product info
+                        document.getElementById('currentProduct').innerText = `Name: ${product.name}, Price: $${product.price}, Quantity: ${product.quantity}`;
+
+                        // Update and display accumulated sum price
+                        currentSum += product.price;
+                        document.getElementById('currentSumPrice').innerText = `$${currentSum.toFixed(2)}`;
+                    } else {
+                        document.getElementById('currentProduct').innerText = 'Product not found';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+
+            // Clear the input box for the next entry
+            this.value = '';
+        });
+
+        // Function to return to the index page
+        function returnToIndex() {
+            window.location.href = "/";
+        }
+
+        function submitOnEnter(event) {
+            // Check if Enter key is pressed
+            if (event.key === "Enter") {
+                event.preventDefault(); // Prevent default form submission
+                document.getElementById("numberForm").submit(); // Submit the form
+            }
+        }
+    </script>
+
+</body>
+</html>

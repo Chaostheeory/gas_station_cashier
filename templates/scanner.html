@@ -3,11 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <head>
+    <style>
+        body {
+            font-size: 40px;
+        }
+    </style>
+</head>
     <title>Barcode Scanner</title>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const inputField = document.getElementById('barcode-input');
             const unitPriceDisplay = document.getElementById('unit-price');
+            const productNameDisplay = document.getElementById('product-name');
             const totalPriceDisplay = document.getElementById('total-price');
             let totalPrice = 0;
 
@@ -16,7 +24,7 @@
             inputField.addEventListener('keypress', function(event) {
                 if (event.key === 'Enter') {
                     const barcode = inputField.value;
-                    fetch('/get_price', {
+                    fetch('/sell_get_price', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -26,6 +34,8 @@
                     .then(response => response.json())
                     .then(data => {
                         const unitPrice = data.price;
+                        const productName = data.name;
+                        productNameDisplay.textContent = productName || 'Unknown Product';
                         unitPriceDisplay.textContent = unitPrice.toFixed(2);
                         totalPrice += unitPrice;
                         totalPriceDisplay.textContent = totalPrice.toFixed(2);
@@ -34,20 +44,30 @@
                     .catch(error => {
                         console.error('Error:', error);
                         alert('Item not found');
+                        productNameDisplay.textContent = 'Unknown Product';
+                        unitPriceDisplay.textContent = '0.00';
                         inputField.value = '';  // Clear input field
                     });
                 }
             });
         });
+        function returnToIndex() {
+            window.location.href = "/";
+        }
     </script>
 </head>
 <body>
-    <input id="barcode-input" type="text" placeholder="Scan barcode" autofocus>
+    <input id="barcode-input" type="text" placeholder="请扫条形码" autofocus>
     <div>
-        <label>Unit Price: $<span id="unit-price">0.00</span></label>
+        <label>当前商品名称: <span id="product-name">未知</span></label>
     </div>
     <div>
-        <label>Total Price: $<span id="total-price">0.00</span></label>
+        <label>商品单价: $<span id="unit-price">0.00</span></label>
     </div>
+    <div>
+        <label>商品总价: $<span id="total-price">0.00</span></label>
+    </div>
+    <button onclick="returnToIndex()">返回主页</button>
+
 </body>
 </html>
